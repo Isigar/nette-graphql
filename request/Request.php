@@ -19,6 +19,7 @@ class Request
     private $client;
     private $response;
     private $headers;
+    private $auth;
 
     public function __construct($url)
     {
@@ -26,7 +27,10 @@ class Request
     }
 
     public function auth(){
-
+        $body = [
+            "cmd" => "jwt",
+        ];
+        $this->call($body,[],Parser::UNIVERSAL_SETTER);
     }
 
     public function call($query, $variables = [], $parserType){

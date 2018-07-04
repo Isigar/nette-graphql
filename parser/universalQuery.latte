@@ -1,0 +1,34 @@
+{
+{if is_array($body["key"])}
+    {$body['cmd']}({foreach $body["key"] as $key => $val}
+    {if !$iterator->isFirst()},{/if}{$val}: {if !is_array($body["params"][$val])}{$body["params"][$val]}){else}{
+        {foreach $body['params'][$val] as $key2 => $val2}
+            {$key2}: {$parser->uniqParamTypes($key2,$val2)}
+        {/foreach}}{if $iterator->isLast()}){/if}
+    {/if}
+{/foreach}
+{else}
+    {dump $body}
+    {$body['cmd']}({$body['key']}:
+    {if isset($body["params"][$body['key']])}
+        {$parser->uniqParamTypes($body['key'],$body["params"][$body['key']])}
+        {var $setted = true}
+        {php unset($body["params"][$body['key']])}
+        ){
+        {else}
+        {
+    {/if}
+    {foreach $body['params'] as $key => $val}
+        {if $key == ""}
+            {foreach $val as $key2 => $val2}
+                {$parser->uniqParamTypes($key2,$val2)}
+            {/foreach}
+        {else}
+            {$key}
+        {/if}
+    {/foreach}
+    }{if !$setted}
+        )
+    {/if}
+{/if}
+}

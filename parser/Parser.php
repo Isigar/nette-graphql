@@ -15,11 +15,12 @@ class Parser
 {
     const UNIVERSAL_GETTER = "universalGetter.latte";
     const UNIVERSAL_SETTER = "universalSetter.latte";
+    const UNIVERSAL_QUERY = "universalQuery.latte";
 
     private $type;
     private $body;
 
-    public function __construct($type = self::ALL_TRANSLATION,$body = [])
+    public function __construct($type = self::UNIVERSAL_GETTER,$body = [])
     {
         $this->body = $body;
         switch ($type){
@@ -28,6 +29,9 @@ class Parser
                 break;
             case self::UNIVERSAL_SETTER:
                 $this->setType(self::UNIVERSAL_SETTER);
+                break;
+            case self::UNIVERSAL_QUERY:
+                $this->setType(self::UNIVERSAL_QUERY);
                 break;
             default:
                 $this->setType(self::UNIVERSAL_GETTER);

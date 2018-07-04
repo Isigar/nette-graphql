@@ -18,6 +18,7 @@ class GraphQLExtension extends CompilerExtension
         'host' => 'http://tcluster.appelis-app.cz/',
         'port' => null,
         'url' => 'api/v1/translations/graphql',
+        'auth' => 'api/v1/auth/graphql'
     ];
 
     public function loadConfiguration()
