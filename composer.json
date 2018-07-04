@@ -1,0 +1,17 @@
+{
+  "name": "relisoft/graphql",
+  "description": "GraphQL client for nette",
+  "keywords": ["graphql", "client", "php","nette"],
+  "license": "MIT",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Stanislav Isigar Opletal",
+      "email": "info@relisoft.cz"
+    }
+  ],
+  "require" : {
+    "euautomation/graphql-client": "^0.2.0"
+  },
+  "minimum-stability": "dev"
+}

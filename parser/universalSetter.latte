@@ -1,0 +1,17 @@
+mutation {
+{if is_array($body["key"])}
+    {$body['cmd']}({foreach $body["key"] as $key => $val}
+        {if !$iterator->isFirst()},{/if}{$val}: {if !is_array($body["params"][$val])}{$body["params"][$val]}){else}{
+        {foreach $body['params'][$val] as $key2 => $val2}
+        {$key2}: {$parser->uniqParamTypes($key2,$val2)}
+        {/foreach}}{if $iterator->isLast()}){/if}
+    {/if}
+    {/foreach}
+{else}
+    {$body['cmd']}({$body['key']}: {
+    {foreach $body['params'] as $key => $val}
+        {$key}: {$parser->uniqParamTypes($key,$val)}
+    {/foreach}
+    })
+{/if}
+}
