@@ -28,7 +28,7 @@ class GraphQLExtension extends CompilerExtension
         $builder = $this->getContainerBuilder();
         $builder->addDefinition($this->prefix("request"))
             ->setFactory(Request::class,[$this->makeUrl($config),$this->makeAuthUrl($config)])
-            ->addSetup("setAutoAuth",[true]);
+            ->addSetup("setAutoAuth",[$config["autoAuth"]]);
         parent::loadConfiguration();
 
     }
