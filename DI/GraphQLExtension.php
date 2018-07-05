@@ -18,16 +18,17 @@ class GraphQLExtension extends CompilerExtension
         'host' => '',
         'port' => null,
         'url' => '',
-        'auth' => ''
+        'auth' => '',
+        'autoAuth' => true
     ];
 
     public function loadConfiguration()
     {
-
         $config = $this->validateConfig($this->defaults,$this->config);
         $builder = $this->getContainerBuilder();
         $builder->addDefinition($this->prefix("request"))
-            ->setFactory(Request::class,[$this->makeUrl($config)]);
+            ->setFactory(Request::class,[$this->makeUrl($config),$this->makeAuthUrl($config),"@session"])
+            ->addSetup("setAutoAuth",[$config["autoAuth"]]);
         parent::loadConfiguration();
 
     }
@@ -37,6 +38,18 @@ class GraphQLExtension extends CompilerExtension
             return $config['host']."/".$config["url"];
         }else{
             return $config['host'].":".$config['port']."/".$config["url"];
+        }
+    }
+
+    protected function makeAuthUrl($config){
+        if($config["auth"]){
+            if(is_null($config['port'])){
+                return $config['host']."/".$config["auth"];
+            }else{
+                return $config['host'].":".$config['port']."/".$config["auth"];
+            }
+        }else{
+            return null;
         }
     }
 }
