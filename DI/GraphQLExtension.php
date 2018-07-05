@@ -15,10 +15,10 @@ use Relisoft\GraphQL\Request\Request;
 class GraphQLExtension extends CompilerExtension
 {
     public $defaults = [
-        'host' => 'http://tcluster.appelis-app.cz/',
+        'host' => '',
         'port' => null,
-        'url' => 'api/v1/translations/graphql',
-        'auth' => 'api/v1/auth/graphql'
+        'url' => '',
+        'auth' => ''
     ];
 
     public function loadConfiguration()
