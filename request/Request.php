@@ -17,32 +17,126 @@ use Tracy\Debugger;
 class Request
 {
     private $client;
-    private $response;
-    private $headers;
     private $auth;
+    private $token;
+    private $autoAuth = false;
 
-    public function __construct($url)
+    /** @var string Key for auth */
+    private $appKey;
+
+    public function __construct($url,$authUrl = null)
     {
         $this->client = new Client($url);
+        if($authUrl)
+            $this->auth = new Client($authUrl);
     }
 
-    public function auth(){
+    /**
+     * @throws \Exception
+     */
+    public function auth($parserType = Parser::UNIVERSAL_QUERY){
         $body = [
             "cmd" => "jwt",
+            "key" => "appKey",
+            "params" => [
+                "appKey" => "someString",
+                "" => [
+                    "body"
+                ]
+            ]
         ];
-        $this->call($body,[],Parser::UNIVERSAL_SETTER);
+        $parser = new Parser($parserType,$body);
+        $rendered = $parser->render();
+        $response = $this->auth->raw($rendered,[],$this->headers());
+        $body = $response->getBody()->getContents();
+
+        if($this->hasErros($body)){
+            return false;
+        }else{
+            if($res = $this->validResponse($body)){
+                $this->token = $res["body"];
+                return true;
+            }else{
+                return false;
+            }
+        }
     }
 
+    /**
+     * @param $query
+     * @param array $variables
+     * @param $parserType
+     * @return \EUAutomation\GraphQL\Response
+     * @throws \Exception
+     */
     public function call($query, $variables = [], $parserType){
-        $parser = new Parser($parserType,$query);
-        $rendered = $parser->render();
-        $response = $this->client->response($rendered,$variables,$this->headers());
-        return $response;
+        if($this->autoAuth){
+            if($this->token){
+                $parser = new Parser($parserType,$query);
+                $rendered = $parser->render();
+                $response = $this->client->response($rendered,$variables,$this->headers());
+                return $response;
+            }else{
+                if($this->auth()){
+                    $parser = new Parser($parserType,$query);
+                    $rendered = $parser->render();
+                    $response = $this->client->response($rendered,$variables,$this->headers());
+                    return $response;
+                }else{
+                    throw new \Exception("Authorization failed!");
+                }
+            }
+        }else{
+            $parser = new Parser($parserType,$query);
+            $rendered = $parser->render();
+            $response = $this->client->response($rendered,$variables,$this->headers());
+            return $response;
+        }
     }
 
     public function headers(){
-        return [
-            'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBLZXkiOiJpZCB2ZW5pYW0gcGVyc3BpY2lhdGlzIGV0IG5pc2kgYXV0IGNvcnBvcmlzIiwia2V5IjoiZGV2LXRlc3QiLCJpZF9jdXN0b21lciI6MSwiaWRfdXNlciI6MzcsImlhdCI6MTUyOTQxNDk2NX0.VfT4sy_Um13kxRKMYYGKKdz7ruiv7JXSD4hSi44Dn2k'
-        ];
+        if($this->auth){
+            if($this->token){
+                return [
+                    'Authorization' => 'Bearer '.$this->token
+                ];
+            }else{
+                return [];
+            }
+        }else{
+            return [];
+        }
+    }
+
+    public function setAutoAuth($param){
+        $this->autoAuth = $param;
+    }
+
+
+    public function validResponse($response){
+        $array = Json::decode($response,Json::FORCE_ARRAY);
+        if(in_array("data",array_keys($array))){
+            if(is_null($array["data"])){
+                return false;
+            }else{
+                return $array["data"];
+            }
+        }else{
+            return false;
+        }
+    }
+
+    /**
+     * @param $response
+     * @return bool
+     * @throws \Nette\Utils\JsonException
+     */
+    public function hasErros($response){
+        $array = Json::decode($response,Json::FORCE_ARRAY);
+        if(in_array("errors",array_keys($array))){
+            return $array["errors"];
+        }else{
+            return false;
+        }
     }
 }
