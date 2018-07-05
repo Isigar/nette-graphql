@@ -13,6 +13,7 @@ use EUAutomation\GraphQL\Client;
 use Nette\Http\Session;
 use Nette\SmartObject;
 use Nette\Utils\Json;
+use Relisoft\GraphQL\DI\GraphQLException;
 use Relisoft\GraphQL\Parser\Parser;
 use Tracy\Debugger;
 
@@ -45,7 +46,11 @@ class Request
          * Try use old token
          */
         if($this->section->token){
-            $this->token = $this->section->token;
+            if($this->section->oldAppKey == $this->getAppKey()){
+                $this->token = $this->section->token;
+            }else{
+                $this->token = null;
+            }
         }
     }
 
@@ -66,19 +71,42 @@ class Request
         ];
         $parser = new Parser($parserType,$body);
         $rendered = $parser->render();
-        $response = $this->auth->raw($rendered,[],$this->headers());
-        $body = $response->getBody()->getContents();
-
+        try{
+            $response = $this->auth->raw($rendered,[],$this->headers());
+            $body = $response->getBody()->getContents();
+        }catch (\Exception $e){
+            throw new GraphQLException("Cant get data! Error: ".$e->getMessage());
+        }
 
         $callTime = Debugger::timer("auth");
         if($error = $this->hasErros($body)){
-            $this->onAuth($callTime,$error);
+            try{
+                $this->onAuth($callTime,$error);
+
+                if($error[0]["code"] == 401){
+                    throw new GraphQLException("Server return code 401! Bad data provided!");
+                }elseif($error[0]["code"] == 403){
+                    throw new GraphQLException("Server return code 403! Missing authorization token!");
+                }elseif($error[0]["code"] == 503){
+                    throw new GraphQLException("Server return code 503! Authorization failed!");
+                }else{
+
+                }
+            }catch (GraphQLException $e){
+                throw $e;
+            } catch (\Exception $e){
+                throw new GraphQLException("Cant call onAuth callback!");
+            }
             return false;
         }else{
             if($res = $this->validResponse($body)){
-                $this->onAuth($callTime,$res);
-                $this->token = $res["jwt"]["body"];
-                $this->section->token = $res["jwt"]["body"];
+                try{
+                    $this->onAuth($callTime,$res);
+                    $this->token = $res["jwt"]["body"];
+                    $this->section->token = $res["jwt"]["body"];
+                }catch (\Exception $e){
+                    throw new GraphQLException("Can't assign token or call onAuth callback!");
+                }
                 return true;
             }else{
                 return false;
@@ -99,40 +127,66 @@ class Request
             if($this->token){
                 $parser = new Parser($parserType,$query);
                 $rendered = $parser->render();
-                $response = $this->client->raw($rendered,$variables,$this->headers());
-                $body = $response->getBody()->getContents();
+                try{
+                    $response = $this->client->raw($rendered,$variables,$this->headers());
+                    $body = $response->getBody()->getContents();
+                }catch (\Exception $e){
+                    throw new GraphQLException("Cant get data! Error: ".$e->getMessage());
+                }
 
                 $callTime = Debugger::timer("call");
 
                 if($error = $this->hasErros($body)){
-                    $this->onCall($callTime,$error);
+                    try{
+                        $this->onCall($callTime,$error);
+                    }catch (\Exception $e){
+                        throw new GraphQLException("Cant call onAuth callback!");
+                    }
                     return $error;
                 }else{
-                    $data = $this->validResponse($body);
-                    if($data){
-                        $this->onCall($callTime,$data);
-                        return $data;
-                    }else{
-                        return false;
-                    }
-                }
-            }else{
-                if($this->auth()){
-                    $parser = new Parser($parserType,$query);
-                    $rendered = $parser->render();
-                    $response = $this->client->raw($rendered,$variables,$this->headers());
-                    $body = $response->getBody()->getContents();
-                    $callTime = Debugger::timer("call");
-                    if($error = $this->hasErros($body)){
-                        $this->onCall($callTime,$error);
-                        return $error;
-                    }else{
+                    try{
                         $data = $this->validResponse($body);
                         if($data){
                             $this->onCall($callTime,$data);
                             return $data;
                         }else{
                             return false;
+                        }
+                    }catch (\Exception $e){
+                        throw new GraphQLException("Cant get data or call onCall callback!");
+                    }
+                }
+            }else{
+                if($this->auth()){
+                    $parser = new Parser($parserType,$query);
+                    $rendered = $parser->render();
+
+                    try{
+                        $response = $this->client->raw($rendered,$variables,$this->headers());
+                        $body = $response->getBody()->getContents();
+                    }catch (\Exception $e){
+                        throw new GraphQLException("Cant get data or call onCall callback!");
+                    }
+
+                    $callTime = Debugger::timer("call");
+                    if($error = $this->hasErros($body)){
+                        try{
+                            $this->onCall($callTime,$error);
+                        }catch (\Exception $e){
+                            throw new GraphQLException("Cant call onCall callback!");
+                        }
+                        return $error;
+                    }else{
+                        try{
+                            $data = $this->validResponse($body);
+                            if($data){
+                                $this->onCall($callTime,$data);
+                                return $data;
+                            }else{
+                                return false;
+                            }
+                        }catch (\Exception $e){
+                            throw new GraphQLException("Cant get data or call onCall callback!");
                         }
                     }
                 }else{
@@ -142,19 +196,33 @@ class Request
         }else{
             $parser = new Parser($parserType,$query);
             $rendered = $parser->render();
-            $response = $this->client->raw($rendered,$variables,$this->headers());
-            $body = $response->getBody()->getContents();
+            try{
+                $response = $this->client->raw($rendered,$variables,$this->headers());
+                $body = $response->getBody()->getContents();
+            }catch (\Exception $e){
+                throw new GraphQLException("Cant get data or call onCall callback!");
+            }
+
             $callTime = Debugger::timer("call");
+
             if($error = $this->hasErros($body)){
-                $this->onCall($callTime,$error);
+                try{
+                    $this->onCall($callTime,$error);
+                }catch (\Exception $e){
+                    throw new GraphQLException("Cant call onCall callback!");
+                }
                 return $error;
             }else{
-                $data = $this->validResponse($body);
-                if($data){
-                    $this->onCall($callTime,$data);
-                    return $data;
-                }else{
-                    return false;
+                try{
+                    $data = $this->validResponse($body);
+                    if($data){
+                        $this->onCall($callTime,$data);
+                        return $data;
+                    }else{
+                        return false;
+                    }
+                }catch (\Exception $e){
+                    throw new GraphQLException("Cant get data or call onCall callback!");
                 }
             }
         }
@@ -267,6 +335,8 @@ class Request
      */
     public function setAppKey($appKey)
     {
+        $this->section->oldAppKey = $this->appKey;
         $this->appKey = $appKey;
+        $this->section->appKey = $appKey;
     }
 }

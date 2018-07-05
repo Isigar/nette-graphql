@@ -10,6 +10,7 @@ namespace Relisoft\GraphQL\Parser;
 
 
 use Latte\Engine;
+use Relisoft\GraphQL\DI\GraphQLException;
 
 class Parser
 {
@@ -40,11 +41,15 @@ class Parser
     }
 
     public function render(){
-        $engine = new Engine();
-        $params = ["body" => $this->body];
-        $params["parser"] = $this;
-        $string = $engine->renderToString(__DIR__."/".$this->getType(),$params);
-        return $string;
+       try{
+           $engine = new Engine();
+           $params = ["body" => $this->body];
+           $params["parser"] = $this;
+           $string = $engine->renderToString(__DIR__."/".$this->getType(),$params);
+           return $string;
+       }catch (\Exception $e){
+           throw new GraphQLException('Cant parse body!');
+       }
     }
 
     public function uniqParamTypes($key, $val){

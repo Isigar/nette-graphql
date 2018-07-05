@@ -11,6 +11,7 @@ namespace Relisoft\GraphQL\Tracy;
 
 use Latte\Engine;
 use Latte\Helpers;
+use Nette\Http\Session;
 use Nette\Utils\Arrays;
 use Nette\Utils\FileSystem;
 use Nette\Utils\Html;
@@ -25,8 +26,9 @@ class TracyExtension implements IBarPanel
     private $authCalls = [];
     private $totalTime;
 
-    public function __construct(Bar $bar)
+    public function __construct(Bar $bar,Session $session)
     {
+        $this->session = $session;
         $bar->addPanel($this);
     }
 
@@ -71,6 +73,10 @@ class TracyExtension implements IBarPanel
             "type" => "call"
         ]);
         $this->totalTime += $time;
+    }
+
+    public function onInit($appkey){
+
     }
 
     public function onAuthCall($time,$body){
