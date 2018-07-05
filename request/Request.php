@@ -10,6 +10,7 @@ namespace Relisoft\GraphQL\Request;
 
 
 use EUAutomation\GraphQL\Client;
+use Nette\Http\Session;
 use Nette\Utils\Json;
 use Relisoft\GraphQL\Parser\Parser;
 use Tracy\Debugger;
@@ -20,15 +21,26 @@ class Request
     private $auth;
     private $token;
     private $autoAuth = false;
+    private $session;
+    private $section;
 
     /** @var string Key for auth */
     private $appKey;
 
-    public function __construct($url,$authUrl = null)
+    public function __construct($url,$authUrl = null, Session $session)
     {
         $this->client = new Client($url);
         if($authUrl)
             $this->auth = new Client($authUrl);
+
+        $this->session = $session;
+        $this->section = $session->getSection(md5($this->getAppKey()));
+        /**
+         * Try use old token
+         */
+        if($this->section->token){
+            $this->token = $this->section->token;
+        }
     }
 
     /**
@@ -39,7 +51,7 @@ class Request
             "cmd" => "jwt",
             "key" => "appKey",
             "params" => [
-                "appKey" => "someString",
+                "appKey" => $this->getAppKey(),
                 "" => [
                     "body"
                 ]
@@ -54,7 +66,7 @@ class Request
             return false;
         }else{
             if($res = $this->validResponse($body)){
-                $this->token = $res["body"];
+                $this->token = $res["jwt"]["body"];
                 return true;
             }else{
                 return false;
@@ -74,14 +86,34 @@ class Request
             if($this->token){
                 $parser = new Parser($parserType,$query);
                 $rendered = $parser->render();
-                $response = $this->client->response($rendered,$variables,$this->headers());
-                return $response;
+                $response = $this->client->raw($rendered,$variables,$this->headers());
+                $body = $response->getBody()->getContents();
+                if($error = $this->hasErros($body)){
+                    return $error;
+                }else{
+                    $data = $this->validResponse($body);
+                    if($data){
+                        return $data;
+                    }else{
+                        return false;
+                    }
+                }
             }else{
                 if($this->auth()){
                     $parser = new Parser($parserType,$query);
                     $rendered = $parser->render();
-                    $response = $this->client->response($rendered,$variables,$this->headers());
-                    return $response;
+                    $response = $this->client->raw($rendered,$variables,$this->headers());
+                    $body = $response->getBody()->getContents();
+                    if($error = $this->hasErros($body)){
+                        return $error;
+                    }else{
+                        $data = $this->validResponse($body);
+                        if($data){
+                            return $data;
+                        }else{
+                            return false;
+                        }
+                    }
                 }else{
                     throw new \Exception("Authorization failed!");
                 }
@@ -89,8 +121,18 @@ class Request
         }else{
             $parser = new Parser($parserType,$query);
             $rendered = $parser->render();
-            $response = $this->client->response($rendered,$variables,$this->headers());
-            return $response;
+            $response = $this->client->raw($rendered,$variables,$this->headers());
+            $body = $response->getBody()->getContents();
+            if($error = $this->hasErros($body)){
+                return $error;
+            }else{
+                $data = $this->validResponse($body);
+                if($data){
+                    return $data;
+                }else{
+                    return false;
+                }
+            }
         }
     }
 
@@ -138,5 +180,69 @@ class Request
         }else{
             return false;
         }
+    }
+
+    /**
+     * @return Client
+     */
+    public function getClient()
+    {
+        return $this->client;
+    }
+
+    /**
+     * @param Client $client
+     */
+    public function setClient($client)
+    {
+        $this->client = $client;
+    }
+
+    /**
+     * @return Client
+     */
+    public function getAuth()
+    {
+        return $this->auth;
+    }
+
+    /**
+     * @param Client $auth
+     */
+    public function setAuth($auth)
+    {
+        $this->auth = $auth;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getToken()
+    {
+        return $this->token;
+    }
+
+    /**
+     * @param mixed $token
+     */
+    public function setToken($token)
+    {
+        $this->token = $token;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAppKey()
+    {
+        return $this->appKey;
+    }
+
+    /**
+     * @param string $appKey
+     */
+    public function setAppKey($appKey)
+    {
+        $this->appKey = $appKey;
     }
 }
