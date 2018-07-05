@@ -11,12 +11,15 @@ namespace Relisoft\GraphQL\Request;
 
 use EUAutomation\GraphQL\Client;
 use Nette\Http\Session;
+use Nette\SmartObject;
 use Nette\Utils\Json;
 use Relisoft\GraphQL\Parser\Parser;
 use Tracy\Debugger;
 
 class Request
 {
+    use SmartObject;
+
     private $client;
     private $auth;
     private $token;
@@ -26,6 +29,9 @@ class Request
 
     /** @var string Key for auth */
     private $appKey;
+
+    public $onCall;
+    public $onAuth;
 
     public function __construct($url,$authUrl = null, Session $session)
     {
@@ -47,6 +53,7 @@ class Request
      * @throws \Exception
      */
     public function auth($parserType = Parser::UNIVERSAL_QUERY){
+        Debugger::timer("auth");
         $body = [
             "cmd" => "jwt",
             "key" => "appKey",
@@ -62,11 +69,16 @@ class Request
         $response = $this->auth->raw($rendered,[],$this->headers());
         $body = $response->getBody()->getContents();
 
-        if($this->hasErros($body)){
+
+        $callTime = Debugger::timer("auth");
+        if($error = $this->hasErros($body)){
+            $this->onAuth($callTime,$error);
             return false;
         }else{
             if($res = $this->validResponse($body)){
+                $this->onAuth($callTime,$res);
                 $this->token = $res["jwt"]["body"];
+                $this->section->token = $res["jwt"]["body"];
                 return true;
             }else{
                 return false;
@@ -82,17 +94,23 @@ class Request
      * @throws \Exception
      */
     public function call($query, $variables = [], $parserType){
+        Debugger::timer("call");
         if($this->autoAuth){
             if($this->token){
                 $parser = new Parser($parserType,$query);
                 $rendered = $parser->render();
                 $response = $this->client->raw($rendered,$variables,$this->headers());
                 $body = $response->getBody()->getContents();
+
+                $callTime = Debugger::timer("call");
+
                 if($error = $this->hasErros($body)){
+                    $this->onCall($callTime,$error);
                     return $error;
                 }else{
                     $data = $this->validResponse($body);
                     if($data){
+                        $this->onCall($callTime,$data);
                         return $data;
                     }else{
                         return false;
@@ -104,11 +122,14 @@ class Request
                     $rendered = $parser->render();
                     $response = $this->client->raw($rendered,$variables,$this->headers());
                     $body = $response->getBody()->getContents();
+                    $callTime = Debugger::timer("call");
                     if($error = $this->hasErros($body)){
+                        $this->onCall($callTime,$error);
                         return $error;
                     }else{
                         $data = $this->validResponse($body);
                         if($data){
+                            $this->onCall($callTime,$data);
                             return $data;
                         }else{
                             return false;
@@ -123,11 +144,14 @@ class Request
             $rendered = $parser->render();
             $response = $this->client->raw($rendered,$variables,$this->headers());
             $body = $response->getBody()->getContents();
+            $callTime = Debugger::timer("call");
             if($error = $this->hasErros($body)){
+                $this->onCall($callTime,$error);
                 return $error;
             }else{
                 $data = $this->validResponse($body);
                 if($data){
+                    $this->onCall($callTime,$data);
                     return $data;
                 }else{
                     return false;

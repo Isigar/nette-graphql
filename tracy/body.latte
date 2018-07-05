@@ -1,0 +1,25 @@
+<h1>GraphQL</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Type</th>
+            <th>Response</th>
+            <th>Time</th>
+        </tr>
+    </thead>
+    {var $time = 0}
+    {foreach $all as $one}
+        <tr>
+            <td>{$one["type"]}</td>
+            <td>{$helper($one["body"])|noescape}</td>
+            <td>{$one["time"]}</td>
+        </tr>
+    {/foreach}
+    <tfoot>
+        <tr>
+            <td>Call count: {$callCount}</td>
+            <td></td>
+            <td>Total time: {$totalTime}</td>
+        </tr>
+    </tfoot>
+</table>
