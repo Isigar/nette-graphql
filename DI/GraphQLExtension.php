@@ -11,6 +11,7 @@ namespace Relisoft\GraphQL\DI;
 
 use Nette;
 use Nette\DI\CompilerExtension;
+use Relisoft\GraphQL\Request\MainRequest;
 use Relisoft\GraphQL\Request\Request;
 use Relisoft\GraphQL\Tracy\TracyExtension;
 use Tracy\Bar;
@@ -24,6 +25,7 @@ class GraphQLExtension extends CompilerExtension
         'url' => '',
         'auth' => '',
         'autoAuth' => true,
+        'sections' => []
     ];
 
     public function loadConfiguration()
@@ -33,9 +35,32 @@ class GraphQLExtension extends CompilerExtension
         $builder->addDefinition($this->prefix("bar"))
             ->setFactory(TracyExtension::class,["@tracy.bar","@session"]);
         $builder->addDefinition($this->prefix("request"))
-            ->setFactory(Request::class,[$this->makeUrl($config),$this->makeAuthUrl($config),"@session"])
+            ->setFactory(MainRequest::class,[$this->makeUrl($config),$this->makeAuthUrl($config),"@session"])
             ->addSetup("setAutoAuth",[$config["autoAuth"]]);
+        $this->createSectionsConnection($builder,$config);
         parent::loadConfiguration();
+    }
+
+    /**
+     * Generate services for every section in config
+     */
+    public function createSectionsConnection($builder,$config){
+        if(isset($this->config["sections"])){
+            foreach($this->config["sections"] as $key => $values){
+                if(!isset($values["autoAuth"])){
+                    $values["autoAuth"] = $config["autoAuth"];
+                }
+                if(!isset($values["auth"])){
+                    $values["auth"] = $config["auth"];
+                }
+
+                $className = Nette\Utils\Strings::capitalize($key);
+
+                $builder->addDefinition($this->prefix("section.".$key))
+                    ->setFactory("Relisoft\GraphQL\Request\\".$className,[$this->makeUrl($values),$this->makeAuthUrl($values),"@session"])
+                    ->addSetup("setAutoAuth",[$values["autoAuth"]]);
+            }
+        }
     }
 
     public function afterCompile(Nette\PhpGenerator\ClassType $class)

@@ -17,7 +17,7 @@ use Relisoft\GraphQL\DI\GraphQLException;
 use Relisoft\GraphQL\Parser\Parser;
 use Tracy\Debugger;
 
-class Request
+abstract class Request
 {
     use SmartObject;
 
