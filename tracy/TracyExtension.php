@@ -26,10 +26,13 @@ class TracyExtension implements IBarPanel
     private $authCalls = [];
     private $totalTime;
 
+    private $bar;
+
     public function __construct(Bar $bar,Session $session)
     {
         $this->session = $session;
         $bar->addPanel($this);
+        $this->bar = $bar;
     }
 
     /**

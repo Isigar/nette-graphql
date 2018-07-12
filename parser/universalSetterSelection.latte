@@ -1,0 +1,24 @@
+mutation {
+    {$body["cmd"]}(
+    {if is_array($body["key"])}
+        {*}Foreach and every turn{*}
+        {foreach $body["key"] as $key}
+            {$key}: {
+                {foreach $body["params"][$key] as $k => $v}
+                    {$k}: {$parser->uniqParamTypes($k,$v)}
+                {/foreach}
+            }
+        {/foreach}
+    {else}
+        {*}Only once{*}
+        {$body["key"]}: {
+            {foreach $body["params"][$body["key"]] as $k => $v}
+                {$k}: {$parser->uniqParamTypes($k,$v)}
+            {/foreach}
+        }
+    {/if}){
+        {foreach $body["params"][""] as $k}
+             {$k}
+        {/foreach}
+    }
+}

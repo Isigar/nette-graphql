@@ -17,6 +17,7 @@ class Parser
     const UNIVERSAL_GETTER = "universalGetter.latte";
     const UNIVERSAL_SETTER = "universalSetter.latte";
     const UNIVERSAL_QUERY = "universalQuery.latte";
+    const UNIVERSAL_SETTER_SELECTION = "universalSetterSelection.latte";
 
     private $type;
     private $body;
@@ -33,6 +34,9 @@ class Parser
                 break;
             case self::UNIVERSAL_QUERY:
                 $this->setType(self::UNIVERSAL_QUERY);
+                break;
+            case self::UNIVERSAL_SETTER_SELECTION:
+                $this->setType(self::UNIVERSAL_SETTER_SELECTION);
                 break;
             default:
                 $this->setType(self::UNIVERSAL_GETTER);
@@ -57,6 +61,10 @@ class Parser
             case "language":
                 return $val;
             case "id_customer":
+                return $val;
+            case "eventName":
+                return $val;
+            case "type":
                 return $val;
             default:
                 return '"'.$val.'"';
