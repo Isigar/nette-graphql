@@ -22,6 +22,8 @@ class Parser
     private $type;
     private $body;
 
+    private $customUniqParams = [];
+
     public function __construct($type = self::UNIVERSAL_GETTER,$body = [])
     {
         $this->body = $body;
@@ -57,18 +59,65 @@ class Parser
     }
 
     public function uniqParamTypes($key, $val){
-        switch ($key){
-            case "language":
-                return $val;
-            case "id_customer":
-                return $val;
-            case "eventName":
-                return $val;
-            case "type":
-                return $val;
-            default:
-                return '"'.$val.'"';
+        if(!empty($this->getCustomUniqParams())){
+            foreach ($this->getCustomUniqParams() as $customerParam){
+                if($key == $customerParam){
+                    return $val;
+                }else{
+                    continue;
+                }
+            };
+
+            switch ($key){
+                case "language":
+                    return $val;
+                case "id_customer":
+                    return $val;
+                case "eventName":
+                    return $val;
+                case "type":
+                    return $val;
+                case "id_translation":
+                    return $val;
+                case "id":
+                    return $val;
+                default:
+                    return '"'.$val.'"';
+            }
+        }else{
+            switch ($key){
+                case "language":
+                    return $val;
+                case "id_customer":
+                    return $val;
+                case "eventName":
+                    return $val;
+                case "type":
+                    return $val;
+                case "id_translation":
+                    return $val;
+                case "id":
+                    return $val;
+                default:
+                    return '"'.$val.'"';
+            }
         }
+    }
+
+    /**
+     * @return array
+     */
+    public function getCustomUniqParams(): array
+    {
+        return $this->customUniqParams;
+    }
+
+    /**
+     * @param array $customUniqParams
+     */
+    public function setCustomUniqParams(array $customUniqParams): void
+    {
+        $this->customUniqParams = $customUniqParams;
     }
 
     /**

@@ -34,6 +34,8 @@ class Request
     public $onCall;
     public $onAuth;
 
+    private $uniqParams = [];
+
     public function __construct($url,$authUrl = null, Session $session)
     {
         $this->client = new Client($url);
@@ -70,6 +72,9 @@ class Request
             ]
         ];
         $parser = new Parser($parserType,$body);
+        if(!empty($this->uniqParams)){
+            $parser->setCustomUniqParams($this->uniqParams);
+        }
         $rendered = $parser->render();
         try{
             $response = $this->auth->raw($rendered,[],$this->headers());
@@ -126,6 +131,9 @@ class Request
         if($this->autoAuth){
             if($this->token){
                 $parser = new Parser($parserType,$query);
+                if(!empty($this->uniqParams)){
+                    $parser->setCustomUniqParams($this->uniqParams);
+                }
                 $rendered = $parser->render();
                 try{
                     $response = $this->client->raw($rendered,$variables,$this->headers());
@@ -159,6 +167,9 @@ class Request
             }else{
                 if($this->auth()){
                     $parser = new Parser($parserType,$query);
+                    if(!empty($this->uniqParams)){
+                        $parser->setCustomUniqParams($this->uniqParams);
+                    }
                     $rendered = $parser->render();
 
                     try{
@@ -195,6 +206,9 @@ class Request
             }
         }else{
             $parser = new Parser($parserType,$query);
+            if(!empty($this->uniqParams)){
+                $parser->setCustomUniqParams($this->uniqParams);
+            }
             $rendered = $parser->render();
             try{
                 $response = $this->client->raw($rendered,$variables,$this->headers());
@@ -240,6 +254,10 @@ class Request
         }else{
             return [];
         }
+    }
+
+    public function extendUniqParams(array $params){
+        $this->uniqParams = $params;
     }
 
     public function setAutoAuth($param){
