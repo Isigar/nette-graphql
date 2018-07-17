@@ -25,7 +25,8 @@ class GraphQLExtension extends CompilerExtension
         'url' => '',
         'auth' => '',
         'autoAuth' => true,
-        'sections' => []
+        'sections' => [],
+        'uniqParams' => []
     ];
 
     private $sections = [];
@@ -39,6 +40,13 @@ class GraphQLExtension extends CompilerExtension
         $builder->addDefinition($this->prefix("request"))
             ->setFactory(MainRequest::class,[$this->makeUrl($config),$this->makeAuthUrl($config),"@session"])
             ->addSetup("setAutoAuth",[$config["autoAuth"]]);
+
+        if(isset($config["uniqParams"])){
+            if(!empty($config["uniqParams"])){
+                $builder->getDefinition($this->prefix("request"))
+                    ->addSetup("extendUniqParams",[$config["uniqParams"]]);
+            }
+        }
         $this->createSectionsConnection($builder,$config);
         parent::loadConfiguration();
     }
@@ -61,6 +69,13 @@ class GraphQLExtension extends CompilerExtension
                 $builder->addDefinition($this->prefix("section.".$key))
                     ->setFactory("Relisoft\GraphQL\Request\\".$className,[$this->makeUrl($values),$this->makeAuthUrl($values),"@session"])
                     ->addSetup("setAutoAuth",[$values["autoAuth"]]);
+
+                if(isset($config["uniqParams"])){
+                    if(!empty($config["uniqParams"])){
+                        $builder->getDefinition($this->prefix("section.".$key))
+                            ->addSetup("extendUniqParams",[$config["uniqParams"]]);
+                    }
+                }
 
                 $this->sections[] = "graphql.section.".$key;
 

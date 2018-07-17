@@ -11,6 +11,7 @@ namespace Relisoft\GraphQL\Parser;
 
 use Latte\Engine;
 use Relisoft\GraphQL\DI\GraphQLException;
+use Tracy\Debugger;
 
 class Parser
 {
@@ -26,6 +27,7 @@ class Parser
 
     public function __construct($type = self::UNIVERSAL_GETTER,$body = [])
     {
+        Debugger::barDump($this->customUniqParams);
         $this->body = $body;
         switch ($type){
             case self::UNIVERSAL_GETTER:

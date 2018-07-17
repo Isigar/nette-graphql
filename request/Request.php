@@ -73,6 +73,7 @@ class Request
         ];
         $parser = new Parser($parserType,$body);
         if(!empty($this->uniqParams)){
+
             $parser->setCustomUniqParams($this->uniqParams);
         }
         $rendered = $parser->render();
@@ -135,6 +136,7 @@ class Request
                     $parser->setCustomUniqParams($this->uniqParams);
                 }
                 $rendered = $parser->render();
+                Debugger::barDump($rendered);
                 try{
                     $response = $this->client->raw($rendered,$variables,$this->headers());
                     $body = $response->getBody()->getContents();
@@ -258,6 +260,22 @@ class Request
 
     public function extendUniqParams(array $params){
         $this->uniqParams = $params;
+    }
+
+    /**
+     * @return array
+     */
+    public function getUniqParams(): array
+    {
+        return $this->uniqParams;
+    }
+
+    /**
+     * @param array $uniqParams
+     */
+    public function setUniqParams(array $uniqParams): void
+    {
+        $this->uniqParams = $uniqParams;
     }
 
     public function setAutoAuth($param){
