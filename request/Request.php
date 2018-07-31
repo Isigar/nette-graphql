@@ -125,7 +125,7 @@ class Request
      * @return \EUAutomation\GraphQL\Response
      * @throws \Exception
      */
-    public function call($query, $variables = [], $parserType){
+    public function call($query, $variables = [], $parserType = Parser::UNIVERSAL_GETTER){
         Debugger::timer("call");
         if($this->autoAuth){
             if($this->token){
@@ -134,7 +134,7 @@ class Request
                     $parser->setCustomUniqParams($this->uniqParams);
                 }
                 $rendered = $parser->render();
-                Debugger::barDump($rendered);
+
                 try{
                     $response = $this->client->raw($rendered,$variables,$this->headers());
                     $body = $response->getBody()->getContents();
