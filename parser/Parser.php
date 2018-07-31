@@ -27,7 +27,6 @@ class Parser
 
     public function __construct($type = self::UNIVERSAL_GETTER,$body = [])
     {
-        Debugger::barDump($this->customUniqParams);
         $this->body = $body;
         switch ($type){
             case self::UNIVERSAL_GETTER:
@@ -61,6 +60,10 @@ class Parser
     }
 
     public function uniqParamTypes($key, $val){
+        if($val == null){
+            return "null";
+        }
+
         if(!empty($this->getCustomUniqParams())){
             foreach ($this->getCustomUniqParams() as $customerParam){
                 if($key == $customerParam){

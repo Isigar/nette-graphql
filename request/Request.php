@@ -95,8 +95,6 @@ class Request
                     throw new GraphQLException("Server return code 403! Missing authorization token!");
                 }elseif($error[0]["code"] == 503){
                     throw new GraphQLException("Server return code 503! Authorization failed!");
-                }else{
-
                 }
             }catch (GraphQLException $e){
                 throw $e;
@@ -142,6 +140,14 @@ class Request
                     $body = $response->getBody()->getContents();
                 }catch (\Exception $e){
                     throw new GraphQLException("Cant get data! Error: ".$e->getMessage());
+                }
+
+                if($body[0]["code"] == 401){
+                    throw new GraphQLException("Server return code 401! Bad data provided!");
+                }elseif($body[0]["code"] == 403){
+                    $this->auth();
+                }elseif($body[0]["code"] == 503){
+                    throw new GraphQLException("Server return code 503! Authorization failed!");
                 }
 
                 $callTime = Debugger::timer("call");
